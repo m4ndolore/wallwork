@@ -63,6 +63,10 @@ Schema is documented in README.md. Notes:
 - `tiers` are authored at the `open` (adult) band; younger bands are derived via `ageScale`.
 - Distances in `spanFt` / `boardFt` are authored per band — they do not scale linearly.
 - `coaching` entries should name the failure mode or the common cheat, not describe the drill.
+- The phone is the caller; nothing ever lights up. Markers are plain coloured objects. Write
+  "the called colour", never "the lit marker".
+- Name the foot surface exactly: sole means the bottom of the foot. If a drill wants the toe
+  or the laces, say so.
 - Tier names are `Rookie, Solid, Sharp, Silky, Elite`. Soccer touch vocabulary, deliberate.
 - Drills unsuitable for young kids should say so in `coaching` rather than being hidden.
 
