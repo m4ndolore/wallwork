@@ -1,0 +1,20 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Inline drills into index.html
+        run: node tools/inline-drills.mjs
+      - name: Fail if index.html is out of sync with drills.json
+        run: git diff --exit-code index.html

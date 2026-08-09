@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wallwork</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --concrete:#2a2e33; --deep:#1c1f23; --surface:#363b42; --line:#4a515a;
+    --chalk:#eef1f3; --dim:#98a2ad; --gold:#f5c518; --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--deep);color:var(--chalk);
+    font-family:'Archivo',system-ui,sans-serif;font-variant-numeric:tabular-nums;
+    -webkit-font-smoothing:antialiased;overscroll-behavior:none;
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+  }
+  .app{display:flex;flex-direction:column;height:100dvh;max-width:820px;margin:0 auto}
+  .screen{display:none;flex:1;min-height:0;flex-direction:column}
+  .screen.on{display:flex}
+
+  .rail{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--concrete);border-bottom:1px solid var(--line);flex:none}
+  .mark{font-family:'Anton',sans-serif;font-size:17px;letter-spacing:.05em;text-transform:uppercase}
+  .grow{flex:1}
+  .btn{border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--chalk);font:inherit;font-size:13px;font-weight:600;padding:9px 14px;cursor:pointer}
+  .btn:hover{border-color:var(--dim)}
+  .btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+  .btn.icon{width:40px;height:40px;padding:0;font-size:17px;flex:none}
+  .btn.gold{background:var(--gold);border-color:var(--gold);color:#1c1f23;font-family:'Anton',sans-serif;font-size:20px;letter-spacing:.07em;text-transform:uppercase;padding:15px 34px;border-radius:999px}
+  .scroll{flex:1;min-height:0;overflow-y:auto;padding:16px 14px 40px}
+
+  .readout{display:flex;flex-direction:column;align-items:flex-end;line-height:1}
+  .readout b{font-family:'Anton',sans-serif;font-size:24px;font-weight:400}
+  .readout span{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-top:3px}
+
+  .lab{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:22px 0 9px}
+  .lab:first-child{margin-top:0}
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button{flex:1;min-width:76px;padding:11px 8px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--dim);font:inherit;font-weight:600;font-size:13px;cursor:pointer}
+  .seg button.on{background:var(--chalk);color:#1c1f23;border-color:var(--chalk)}
+  .seg button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+  .fam{margin-bottom:26px}
+  .fam h3{font-family:'Anton',sans-serif;font-size:19px;font-weight:400;letter-spacing:.03em}
+  .fam p{font-size:12px;color:var(--dim);margin-top:3px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:9px;margin-top:11px}
+  .card{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:13px;cursor:pointer;text-align:left;color:inherit;font:inherit}
+  .card:hover{border-color:var(--dim)}
+  .card:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+  .card.locked{opacity:.42}
+  .card h4{font-size:15px;font-weight:800;display:flex;align-items:center;gap:7px}
+  .card p{font-size:12px;color:var(--dim);margin-top:5px;line-height:1.45}
+  .chip{display:inline-block;padding:2px 7px;border-radius:999px;background:var(--gold);color:#1c1f23;font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:800}
+  .chip.mute{background:var(--line);color:var(--chalk)}
+  .meta{display:flex;gap:12px;margin-top:9px;font-size:11px;color:var(--dim)}
+
+  .diagram{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-bottom:16px}
+  .diagram svg{display:block;width:100%;height:auto}
+  .h1{font-family:'Anton',sans-serif;font-size:30px;font-weight:400;line-height:1.05}
+  .sub{color:var(--dim);font-size:14px;margin-top:7px;line-height:1.5}
+  ul.coach{margin:0;padding:0;list-style:none}
+  ul.coach li{font-size:14px;line-height:1.5;padding:9px 0 9px 16px;border-bottom:1px solid var(--line);position:relative}
+  ul.coach li:before{content:"";position:absolute;left:0;top:17px;width:6px;height:6px;border-radius:50%;background:var(--gold)}
+  ul.coach li:last-child{border-bottom:none}
+  .tiers{display:flex;gap:5px;margin-top:10px}
+  .tier{flex:1;text-align:center;padding:8px 3px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+  .tier b{display:block;font-family:'Anton',sans-serif;font-size:19px;font-weight:400}
+  .tier span{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+  .cta{padding:14px;background:var(--concrete);border-top:1px solid var(--line);display:flex;justify-content:center;flex:none}
+
+  .stage{position:relative;flex:1;min-height:0;display:grid;place-items:center;background:var(--concrete);cursor:pointer;overflow:hidden;transition:background-color .09s linear}
+  .stage-in{text-align:center;padding:20px}
+  .cue{font-family:'Anton',sans-serif;font-size:clamp(120px,38vh,300px);line-height:.82;color:#0e1114;text-shadow:0 5px 0 rgba(255,255,255,.2)}
+  .cue.word{font-size:clamp(58px,17vh,150px)}
+  .pill{display:inline-block;margin-top:14px;padding:7px 20px 9px;background:#0e1114;color:#fff;border-radius:999px;font-family:'Anton',sans-serif;font-size:clamp(20px,4.5vh,36px);letter-spacing:.09em}
+  .hint{position:absolute;left:0;right:0;bottom:12px;text-align:center;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:rgba(14,17,20,.5)}
+  @keyframes pop{from{transform:scale(.85)}to{transform:scale(1)}}
+  .stage.flash .cue{animation:pop .18s ease-out}
+
+  .result{text-align:center;padding:26px 16px}
+  .rank{font-family:'Anton',sans-serif;font-size:clamp(40px,9vh,74px);font-weight:400;line-height:1}
+  .big{display:flex;gap:28px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+  .big div{text-align:center}
+  .big b{display:block;font-family:'Anton',sans-serif;font-size:38px;font-weight:400;line-height:1}
+  .big span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .pb{margin-top:14px;display:inline-block;padding:5px 14px;border-radius:999px;background:#17b24a;color:#08210f;font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+  .next{margin-top:14px;font-size:13px;color:var(--dim)}
+
+  input[type=text]{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--chalk);font:inherit;font-size:14px}
+  input[type=range]{width:100%;accent-color:var(--gold)}
+  .meter{height:8px;border-radius:99px;background:var(--surface);border:1px solid var(--line);overflow:hidden;margin-top:9px}
+  .meter i{display:block;height:100%;width:0;background:#17b24a}
+  .note{font-size:12px;color:var(--dim);margin-top:7px;line-height:1.45}
+  .warn{font-size:12px;color:#ff9a95;margin-top:7px}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <section class="screen on" id="s-home">
+    <div class="rail">
+      <span class="mark">Wallwork</span>
+      <span class="grow"></span>
+      <button class="btn" id="whoBtn">Player</button>
+      <button class="btn icon" id="setBtn" aria-label="Settings">⚙</button>
+    </div>
+    <div class="scroll" id="library"></div>
+  </section>
+
+  <section class="screen" id="s-drill">
+    <div class="rail">
+      <button class="btn icon" id="backBtn" aria-label="Back">←</button>
+      <span class="mark" id="drillTitle"></span>
+    </div>
+    <div class="scroll" id="drillBody"></div>
+    <div class="cta"><button class="btn gold" id="goBtn">Start</button></div>
+  </section>
+
+  <section class="screen" id="s-run">
+    <div class="rail">
+      <button class="btn icon" id="stopBtn" aria-label="Stop">✕</button>
+      <span class="grow"></span>
+      <div class="readout"><b id="rClock">--</b><span>Clock</span></div>
+      <div class="readout"><b id="rHits">0</b><span>Reps</span></div>
+      <div class="readout"><b id="rMs">--</b><span>Avg ms</span></div>
+    </div>
+    <div class="stage" id="stage" role="button" tabindex="0" aria-label="Score a rep">
+      <div class="stage-in" id="stageIn"></div>
+      <div class="hint" id="hint"></div>
+    </div>
+  </section>
+
+  <section class="screen" id="s-result">
+    <div class="rail"><span class="mark" id="resTitle"></span></div>
+    <div class="scroll"><div class="result" id="resBody"></div></div>
+    <div class="cta">
+      <button class="btn" id="againBtn" style="margin-right:8px">Go again</button>
+      <button class="btn gold" id="doneBtn">Done</button>
+    </div>
+  </section>
+
+  <section class="screen" id="s-set">
+    <div class="rail">
+      <button class="btn icon" id="setBack" aria-label="Back">←</button>
+      <span class="mark">Setup</span>
+    </div>
+    <div class="scroll">
+      <div class="lab">Player name</div>
+      <input type="text" id="pName" maxlength="16">
+      <div class="lab">Age band</div>
+      <div class="seg" id="segAge"></div>
+      <div class="note">Sets the distances in every diagram and rescales every tier, so a six-year-old and a grown-up can both earn Silky honestly.</div>
+      <div class="lab">How a rep is scored</div>
+      <div class="seg" id="segInput"></div>
+      <div class="note" id="inputNote"></div>
+      <div class="meter"><i id="meterBar"></i></div>
+      <input type="range" id="micThresh" min="4" max="80" value="26" aria-label="Microphone sensitivity">
+      <div class="warn" id="micWarn" hidden></div>
+      <div class="lab">Voice calls</div>
+      <div class="seg" id="segVoice"></div>
+      <div class="lab">Pacing when a rep is missed</div>
+      <div class="seg" id="segMiss"></div>
+      <div class="note">Patient waits forever for the rep. Nudge re-calls the same target after four seconds. Move on gives up and calls a new one.</div>
+      <div class="lab">Data</div>
+      <button class="btn" id="wipeBtn">Clear all personal bests</button>
+    </div>
+  </section>
+</div>
+
+<script type="application/json" id="drill-data">{"schemaVersion":1,"tierNames":["Rookie","Solid","Sharp","Silky","Elite"],"ageBands":[{"id":"u6","label":"Ages 4-6"},{"id":"u8","label":"Ages 7-8"},{"id":"u10","label":"Ages 9-10"},{"id":"u12","label":"Ages 11-12"},{"id":"open","label":"13 and up"}],"ageScale":{"u6":0.4,"u8":0.55,"u10":0.7,"u12":0.85,"open":1},"palette":{"red":{"hex":"#e5322d","say":"red"},"green":{"hex":"#17b24a","say":"green"},"blue":{"hex":"#1d6fe0","say":"blue"},"yellow":{"hex":"#f5c518","say":"yellow"},"orange":{"hex":"#f07f1a","say":"orange"},"pink":{"hex":"#e2589b","say":"pink"}},"families":[{"id":"open","label":"No board needed","blurb":"Pods or cones only. Start here today."},{"id":"board","label":"Board, two markers","blurb":"Foot discipline at close range."},{"id":"grid","label":"Board plus grid","blurb":"Pass, then move. The hard stuff."},{"id":"multi","label":"Multi-board","blurb":"Needs 2 or more sensor boards."}],"drills":[{"id":"sole-taps","name":"Sole taps","family":"open","summary":"Ball stays under you. Tap the lit marker with the sole of your foot.","setup":{"layout":"open-four","markers":4,"boardAngle":null,"spanFt":{"u6":6,"u8":8,"u10":10,"u12":12,"open":12},"boardFt":null},"cue":{"channels":["color"],"palette":["red","green","blue","yellow"],"sequence":"random"},"scoring":{"durationSec":45,"counts":"marker","tiers":[14,20,26,34]},"coaching":["Ball never leaves the middle. Feet go to the marker, ball stays home.","Head up. If they are staring at the ball they cannot see the light.","Small steps in, small steps out. No lunging."]},{"id":"dribble-round","name":"Dribble around the light","family":"open","summary":"Take the ball with you, go around the lit marker, come back to the middle.","setup":{"layout":"open-four","markers":4,"boardAngle":null,"spanFt":{"u6":8,"u8":10,"u10":12,"u12":14,"open":14},"boardFt":null},"cue":{"channels":["color"],"palette":["red","green","blue","yellow"],"sequence":"random"},"scoring":{"durationSec":45,"counts":"marker","tiers":[6,9,12,15]},"coaching":["The ball goes round the marker too. Leaving it behind does not count.","Little touches on the way out, then push and go on the way back.","This is the single best drill on this list for ages 5 to 8."]},{"id":"scan-check","name":"Shoulder check","family":"open","summary":"Two markers behind you. Look before the ball arrives, then go to the lit one.","setup":{"layout":"open-two-behind","markers":2,"boardAngle":null,"spanFt":{"u6":6,"u8":8,"u10":10,"u12":10,"open":12},"boardFt":null},"cue":{"channels":["color"],"palette":["red","blue"],"sequence":"random"},"scoring":{"durationSec":45,"counts":"marker","tiers":[8,12,16,20]},"coaching":["A partner or parent serves the ball in by hand or foot.","The light changes while the ball is travelling. They must look over the shoulder.","Scanning is the least trained and most valuable habit in youth soccer."]},{"id":"feet-one","name":"One foot","family":"board","summary":"Red only. Same foot every time. Pure repetition.","setup":{"layout":"two-marker","markers":2,"boardAngle":"vertical","spanFt":null,"boardFt":{"u6":3,"u8":4,"u10":5,"u12":6,"open":6}},"cue":{"channels":["color"],"palette":["red"],"sequence":"single","footMap":{"red":"left","green":"right"}},"scoring":{"durationSec":20,"counts":"board","tiers":[12,18,24,30]},"coaching":["Side of the foot, ankle locked, plant foot pointing at the board.","Run this on the weak foot twice as often as the strong one.","No decision here on purpose. Build the motion before you add choices."]},{"id":"feet-both","name":"Both feet","family":"board","summary":"Red is left, green is right, called at random. Now it is a decision.","setup":{"layout":"two-marker","markers":2,"boardAngle":"vertical","spanFt":null,"boardFt":{"u6":3,"u8":4,"u10":5,"u12":6,"open":6}},"cue":{"channels":["color"],"palette":["red","green"],"sequence":"random","footMap":{"red":"left","green":"right"}},"scoring":{"durationSec":20,"counts":"board","tiers":[10,15,21,27]},"coaching":["Expect the weak foot to be slower. That gap is the whole point.","If they are guessing before the light shows, shorten the interval.","Body shape should stay square to the board between reps."]},{"id":"t-pass","name":"Pass test","family":"board","summary":"Timed test. Alternate feet on the call, close range, flat board.","isTest":true,"setup":{"layout":"two-marker","markers":2,"boardAngle":"vertical","spanFt":null,"boardFt":{"u6":3,"u8":4,"u10":5,"u12":6,"open":6}},"cue":{"channels":["color"],"palette":["red","green"],"sequence":"random","footMap":{"red":"left","green":"right"}},"scoring":{"durationSec":20,"counts":"board","tiers":[12,18,24,30]},"coaching":["Benchmark test. Run it the same way every time or the number means nothing.","Record it once a month, not every session."]},{"id":"t-control","name":"Control test","family":"board","summary":"Angled board sends it up. Control first, then pass. Twice the work.","isTest":true,"setup":{"layout":"two-marker","markers":2,"boardAngle":"angled","spanFt":null,"boardFt":{"u6":6,"u8":8,"u10":10,"u12":12,"open":12}},"cue":{"channels":["color"],"palette":["red","green"],"sequence":"random","footMap":{"red":"left","green":"right"}},"scoring":{"durationSec":30,"counts":"board","tiers":[8,12,14,16]},"coaching":["Tilt the board back so the ball returns in the air.","First touch out of the feet, second touch passes. Two touches, not one.","A dead first touch is worth more than a fast second one."]},{"id":"t-long","name":"Long pass test","family":"board","summary":"Same as the pass test, from distance. Weight and accuracy.","isTest":true,"setup":{"layout":"two-marker","markers":2,"boardAngle":"vertical","spanFt":null,"boardFt":{"u6":8,"u8":10,"u10":14,"u12":16,"open":18}},"cue":{"channels":["color"],"palette":["red","green"],"sequence":"random","footMap":{"red":"left","green":"right"}},"scoring":{"durationSec":30,"counts":"board","tiers":[6,9,12,16]},"coaching":["Distance punishes a loose plant foot more than anything else.","If they cannot reach the board cleanly, move in. Do not let them lash at it."]},{"id":"grid-random","name":"Four colours","family":"grid","summary":"Pass the board, then dribble around whichever colour is lit.","setup":{"layout":"grid-four","markers":4,"boardAngle":"vertical","spanFt":{"u6":8,"u8":10,"u10":12,"u12":12,"open":12},"boardFt":{"u6":4,"u8":4,"u10":6,"u12":6,"open":6}},"cue":{"channels":["color"],"palette":["yellow","blue","orange","pink"],"sequence":"random"},"scoring":{"durationSec":45,"counts":"board","tiers":[7,10,12,14]},"coaching":["The rep is complete when they get back and hit the board again.","Watch for the ball being abandoned at the marker. That is the common cheat."]},{"id":"grid-rotate","name":"Fixed rotation","family":"grid","summary":"Same four colours, always in the same order. Anticipation, not reaction.","setup":{"layout":"grid-four","markers":4,"boardAngle":"vertical","spanFt":{"u6":8,"u8":10,"u10":12,"u12":12,"open":12},"boardFt":{"u6":4,"u8":4,"u10":6,"u12":6,"open":6}},"cue":{"channels":["color"],"palette":["yellow","blue","orange","pink"],"sequence":"rotate"},"scoring":{"durationSec":45,"counts":"board","tiers":[8,11,14,17]},"coaching":["Because they know what is next, they can move before the light. That is the skill.","Good starting point for a young kid who freezes on the random version."]},{"id":"grid-timed","name":"Five second shuffle","family":"grid","summary":"The colour changes every five seconds whether you got there or not.","setup":{"layout":"grid-four","markers":4,"boardAngle":"vertical","spanFt":{"u6":8,"u8":10,"u10":12,"u12":12,"open":12},"boardFt":{"u6":4,"u8":4,"u10":6,"u12":6,"open":6}},"cue":{"channels":["color"],"palette":["yellow","blue","orange","pink"],"sequence":"timed","intervalMs":5000},"scoring":{"durationSec":45,"counts":"board","tiers":[6,9,11,13]},"coaching":["Brutal one. The target can change mid-run, so they must keep re-checking.","Closest thing on the list to a real defender moving while you are on the ball."]},{"id":"grid-six","name":"Six colours","family":"grid","summary":"Six markers instead of four. More to hold in your head.","setup":{"layout":"grid-six","markers":6,"boardAngle":"vertical","spanFt":{"u6":10,"u8":12,"u10":14,"u12":14,"open":14},"boardFt":{"u6":4,"u8":5,"u10":6,"u12":6,"open":6}},"cue":{"channels":["color"],"palette":["yellow","blue","orange","pink","green","red"],"sequence":"random"},"scoring":{"durationSec":45,"counts":"board","tiers":[6,9,11,13]},"coaching":["Needs six markers. Cones with coloured tape work fine.","Set them out in the same arrangement every session or the times drift."]},{"id":"grid-numbers","name":"Numbers beat colours","family":"grid","summary":"Colours and numbers both show. If a number appears, the number wins.","setup":{"layout":"grid-four","markers":4,"boardAngle":"vertical","spanFt":{"u6":8,"u8":10,"u10":12,"u12":12,"open":12},"boardFt":{"u6":4,"u8":4,"u10":6,"u12":6,"open":6}},"cue":{"channels":["color","number"],"palette":["yellow","blue","orange","pink"],"sequence":"random","numberChance":0.5,"priority":"number"},"scoring":{"durationSec":45,"counts":"board","tiers":[5,8,10,12]},"coaching":["Markers need a colour on one face and a number on the other.","The rule inversion is the load. Getting it wrong is normal at first.","Do not run this with under-eights. The rule is too abstract."]},{"id":"t-pass-move","name":"Pass and move test","family":"grid","summary":"Timed grid test. Pass, dribble the lit colour, return.","isTest":true,"setup":{"layout":"grid-four","markers":4,"boardAngle":"vertical","spanFt":{"u6":8,"u8":10,"u10":12,"u12":12,"open":12},"boardFt":{"u6":4,"u8":4,"u10":6,"u12":6,"open":6}},"cue":{"channels":["color"],"palette":["yellow","blue","orange","pink"],"sequence":"random"},"scoring":{"durationSec":45,"counts":"board","tiers":[7,10,12,14]},"coaching":["Benchmark. Fix the grid size for a whole season so the numbers compare."]},{"id":"t-control-move","name":"Control and move test","family":"grid","summary":"Angled board. Control it, then dribble the lit colour.","isTest":true,"setup":{"layout":"grid-four","markers":4,"boardAngle":"angled","spanFt":{"u6":8,"u8":10,"u10":12,"u12":12,"open":12},"boardFt":{"u6":4,"u8":4,"u10":6,"u12":6,"open":6}},"cue":{"channels":["color"],"palette":["yellow","blue","orange","pink"],"sequence":"random"},"scoring":{"durationSec":45,"counts":"board","tiers":[6,8,10,12]},"coaching":["Hardest of the standard tests. Aerial control plus a decision plus travel."]},{"id":"t-elite","name":"Elite test","family":"grid","summary":"Everything at once. Colours, numbers, and numbers take priority.","isTest":true,"setup":{"layout":"grid-four","markers":4,"boardAngle":"vertical","spanFt":{"u6":8,"u8":10,"u10":12,"u12":12,"open":12},"boardFt":{"u6":4,"u8":4,"u10":6,"u12":6,"open":6}},"cue":{"channels":["color","number"],"palette":["yellow","blue","orange","pink"],"sequence":"random","numberChance":0.5,"priority":"number"},"scoring":{"durationSec":45,"counts":"board","tiers":[6,8,10,12]},"coaching":["The ceiling test. Do not bother until the pass and move test is comfortable."]},{"id":"multi-two","name":"Two board switch","family":"multi","summary":"Two boards. Hit whichever one lights up.","boardsNeeded":2,"setup":{"layout":"multi-board","markers":0,"boardAngle":"vertical","spanFt":{"u6":8,"u8":10,"u10":12,"u12":14,"open":14},"boardFt":{"u6":4,"u8":5,"u10":6,"u12":6,"open":6}},"cue":{"channels":["board"],"palette":["blue"],"sequence":"random"},"scoring":{"durationSec":45,"counts":"board","tiers":[10,14,18,22]},"coaching":["Each board scores its own hits, so this one is fully verified."]},{"id":"multi-rotate","name":"Board rotation","family":"multi","summary":"Boards light in a fixed order. Move early.","boardsNeeded":3,"setup":{"layout":"multi-board","markers":0,"boardAngle":"vertical","spanFt":{"u6":10,"u8":12,"u10":14,"u12":16,"open":16},"boardFt":{"u6":4,"u8":5,"u10":6,"u12":6,"open":6}},"cue":{"channels":["board"],"palette":["blue"],"sequence":"rotate"},"scoring":{"durationSec":45,"counts":"board","tiers":[10,14,18,22]},"coaching":["Predictable order means they can travel before the light. Rewards anticipation."]},{"id":"multi-numbers","name":"Board and number","family":"multi","summary":"Boards plus markers plus numbers. The full ecosystem.","boardsNeeded":3,"setup":{"layout":"multi-board","markers":4,"boardAngle":"vertical","spanFt":{"u6":10,"u8":12,"u10":14,"u12":16,"open":16},"boardFt":{"u6":4,"u8":5,"u10":6,"u12":6,"open":6}},"cue":{"channels":["board","number"],"palette":["blue"],"sequence":"random","numberChance":0.5,"priority":"number"},"scoring":{"durationSec":45,"counts":"board","tiers":[8,11,14,17]},"coaching":["Only worth building once you have three boards and a bored teenager."]}]}</script>
+<script>
+(function(){
+"use strict";
+
+var DATA = JSON.parse(document.getElementById("drill-data").textContent);
+var TIERS = DATA.tierNames;
+
+/* ---------- store ---------- */
+var mem = {};
+function put(k,v){
+  mem[k]=v;
+  try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){}
+}
+function get(k,fb,cb){
+  var out = (mem[k]!==undefined) ? mem[k] : fb;
+  try{
+    var raw = localStorage.getItem(k);
+    if(raw!==null && raw!==undefined) out = JSON.parse(raw);
+  }catch(e){}
+  setTimeout(function(){ cb(out); }, 0);
+}
+
+var cfg = { name:"Player", age:"u8", input:"tap", voice:"on", miss:"patient", thresh:26 };
+var bests = {};
+
+/* ---------- hit bus ---------- */
+var Bus = {
+  subs: [],
+  on: function(fn){ this.subs.push(fn); },
+  emit: function(ev){ this.subs.forEach(function(f){ f(ev); }); }
+};
+function hit(source, boardId){ Bus.emit({ source:source, boardId:boardId||0, t:Date.now() }); }
+
+/* ---------- input: microphone ---------- */
+var mic = { ctx:null, an:null, buf:null, raf:null, stream:null, last:0 };
+function micStart(){
+  document.getElementById("micWarn").hidden = true;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ micFail("This browser will not open a microphone. Use tap scoring."); return; }
+  if(!window.isSecureContext){ micFail("Microphones need https. Tap scoring works everywhere; the sensor works over plain http."); return; }
+  navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}})
+    .then(function(st){
+      mic.stream = st;
+      mic.ctx = new (window.AudioContext||window.webkitAudioContext)();
+      var src = mic.ctx.createMediaStreamSource(st);
+      mic.an = mic.ctx.createAnalyser(); mic.an.fftSize = 1024;
+      src.connect(mic.an); mic.buf = new Uint8Array(mic.an.fftSize);
+      micLoop();
+    })
+    .catch(function(){ micFail("Microphone permission refused. Falling back to tap scoring."); });
+}
+function micFail(m){ cfg.input="tap"; put("ww:cfg",cfg); paintSettings(); var w=document.getElementById("micWarn"); w.textContent=m; w.hidden=false; }
+function micStop(){ if(mic.raf)cancelAnimationFrame(mic.raf); mic.raf=null;
+  if(mic.stream){mic.stream.getTracks().forEach(function(t){t.stop();});mic.stream=null;}
+  if(mic.ctx){try{mic.ctx.close();}catch(e){} mic.ctx=null;} mic.an=null;
+  document.getElementById("meterBar").style.width="0"; }
+function micLoop(){
+  mic.raf = requestAnimationFrame(micLoop);
+  if(!mic.an) return;
+  mic.an.getByteTimeDomainData(mic.buf);
+  var peak=0; for(var i=0;i<mic.buf.length;i++){ var d=Math.abs(mic.buf[i]-128); if(d>peak)peak=d; }
+  var lvl = Math.min(100,(peak/128)*220);
+  document.getElementById("meterBar").style.width = lvl.toFixed(0)+"%";
+  var now=Date.now();
+  if(lvl>=cfg.thresh && Eng.live && Eng.cue && !speaking() && now-mic.last>320 && now-Eng.cueAt>250){
+    mic.last=now; hit("mic",0);
+  }
+}
+
+/* ---------- input: sensor (ESP32 over websocket) ---------- */
+var Sensor = {
+  ws:null,
+  connect:function(url){
+    try{
+      this.ws = new WebSocket(url||("ws://"+location.hostname+"/ws"));
+      this.ws.onmessage = function(e){
+        try{ var m = JSON.parse(e.data); if(m.type==="hit") hit("sensor", m.board|0); }catch(err){}
+      };
+    }catch(e){}
+  },
+  stop:function(){ if(this.ws){ try{this.ws.close();}catch(e){} this.ws=null; } }
+};
+
+/* ---------- speech ---------- */
+function say(t){
+  if(cfg.voice!=="on"||!("speechSynthesis" in window)) return;
+  try{ speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(t); u.rate=1.08; speechSynthesis.speak(u); }catch(e){}
+}
+function speaking(){ try{ return speechSynthesis&&speechSynthesis.speaking; }catch(e){ return false; } }
+
+/* ---------- engine ---------- */
+var Eng = {
+  drill:null, live:false, cue:null, cueAt:0, hits:0, msSum:0, msN:0,
+  endsAt:0, tick:null, timer:null, nudge:null, rotIdx:0,
+
+  start:function(drill){
+    this.drill=drill; this.live=true; this.cue=null;
+    this.hits=0; this.msSum=0; this.msN=0; this.rotIdx=0;
+    this.endsAt = Date.now() + drill.scoring.durationSec*1000;
+    show("s-run");
+    if(cfg.input==="mic" && !mic.ctx) micStart();
+    if(cfg.input==="sensor" && !Sensor.ws) Sensor.connect();
+    document.getElementById("hint").textContent =
+      cfg.input==="mic" ? "Listening for the ball" :
+      cfg.input==="sensor" ? "Waiting on the board sensor" : "Tap anywhere to score a rep";
+    say("Ready. Go.");
+    var self=this;
+    setTimeout(function(){ if(self.live) self.next(); }, 900);
+    this.tick = setInterval(function(){ self.beat(); }, 200);
+    this.paintStats();
+  },
+
+  next:function(){
+    var c = this.drill.cue, pal = c.palette, pick;
+    if(c.sequence==="single"){ pick = pal[0]; }
+    else if(c.sequence==="rotate"){ pick = pal[this.rotIdx % pal.length]; this.rotIdx++; }
+    else {
+      do{ pick = pal[Math.floor(Math.random()*pal.length)]; }
+      while(pal.length>1 && this.cue && pick===this.cue.color);
+    }
+    var num = null;
+    if(c.channels.indexOf("number")>=0 && Math.random() < (c.numberChance||0.5)){
+      num = 1 + Math.floor(Math.random()*pal.length);
+    }
+    var foot = c.footMap ? c.footMap[pick] : null;
+    this.cue = { color:pick, number:num, foot:foot };
+    this.cueAt = Date.now();
+    paintCue(this.cue, this.drill);
+    var phrase = num ? String(num) : ((foot?foot+" foot, ":"") + (DATA.palette[pick]||{}).say);
+    say(phrase);
+
+    clearTimeout(this.timer); clearTimeout(this.nudge);
+    var self=this;
+    if(c.sequence==="timed"){
+      this.timer = setTimeout(function(){ if(self.live) self.next(); }, c.intervalMs||5000);
+    } else if(cfg.miss==="nudge"){
+      this.nudge = setTimeout(function(){ if(self.live&&self.cue) say(phrase); }, 4000);
+    } else if(cfg.miss==="move"){
+      this.timer = setTimeout(function(){ if(self.live) self.next(); }, 6000);
+    }
+  },
+
+  score:function(){
+    if(!this.live||!this.cue) return;
+    this.hits++;
+    var rt = Date.now()-this.cueAt;
+    if(rt<15000){ this.msSum+=rt; this.msN++; }
+    var st=document.getElementById("stage");
+    st.classList.add("flash"); setTimeout(function(){st.classList.remove("flash");},180);
+    this.paintStats();
+    if(this.drill.cue.sequence==="timed") return;
+    this.cue=null; clearTimeout(this.nudge); clearTimeout(this.timer);
+    document.getElementById("stage").style.backgroundColor="";
+    document.getElementById("stageIn").innerHTML='<div class="cue" style="opacity:.25">&middot;</div>';
+    var self=this;
+    setTimeout(function(){ if(self.live) self.next(); }, 420);
+  },
+
+  beat:function(){
+    if(!this.live) return;
+    if(Date.now()>=this.endsAt){ this.finish(); return; }
+    this.paintStats();
+  },
+
+  paintStats:function(){
+    document.getElementById("rHits").textContent=this.hits;
+    document.getElementById("rMs").textContent=this.msN?Math.round(this.msSum/this.msN):"--";
+    document.getElementById("rClock").textContent=Math.max(0,Math.ceil((this.endsAt-Date.now())/1000));
+  },
+
+  halt:function(){
+    this.live=false; clearInterval(this.tick); clearTimeout(this.timer); clearTimeout(this.nudge);
+    document.getElementById("stage").style.backgroundColor="";
+  },
+
+  finish:function(){
+    this.halt();
+    var d=this.drill, t=tiersFor(d), idx=tierIndex(this.hits,t);
+    var key=cfg.name+"|"+cfg.age+"|"+d.id;
+    var prev=bests[key]||0, isPB=this.hits>prev;
+    if(isPB){ bests[key]=this.hits; put("ww:bests",bests); }
+    var avg=this.msN?Math.round(this.msSum/this.msN):null;
+    var nextTarget = idx<4 ? t[idx] : null;
+    document.getElementById("resTitle").textContent=d.name;
+    document.getElementById("resBody").innerHTML =
+      '<div class="rank">'+TIERS[idx]+'</div>'+
+      '<div class="big"><div><b>'+this.hits+'</b><span>Reps</span></div>'+
+      '<div><b>'+(avg||"--")+'</b><span>Avg ms</span></div>'+
+      '<div><b>'+Math.max(prev,this.hits)+'</b><span>Best</span></div></div>'+
+      (isPB?'<div class="pb">New personal best</div>':'')+
+      (nextTarget?'<div class="next">'+nextTarget+' reps for '+TIERS[idx+1]+'</div>'
+                 :'<div class="next">Top tier for this age band. Move up a band or shrink the space.</div>');
+    say(isPB ? "New best. "+this.hits+" reps." : this.hits+" reps. "+TIERS[idx]+".");
+    show("s-result");
+  }
+};
+Bus.on(function(){ Eng.score(); });
+
+function tiersFor(d){
+  var s=DATA.ageScale[cfg.age]||1;
+  return d.scoring.tiers.map(function(v){ return Math.max(1,Math.round(v*s)); });
+}
+function tierIndex(n,t){ var i=0; for(var k=0;k<t.length;k++){ if(n>=t[k]) i=k+1; } return i; }
+function ft(d,which){
+  var o=d.setup[which];
+  if(!o) return null;
+  return o[cfg.age]!==undefined?o[cfg.age]:o.open;
+}
+
+/* ---------- cue painting ---------- */
+function paintCue(cue,drill){
+  var hex=(DATA.palette[cue.color]||{}).hex||"#888";
+  var st=document.getElementById("stage");
+  st.style.backgroundColor=hex;
+  var body;
+  if(cue.number) body='<div class="cue">'+cue.number+'</div>';
+  else if(drill.cue.channels.indexOf("board")>=0) body='<div class="cue word">BOARD</div>';
+  else body='<div class="cue word">'+cue.color.toUpperCase()+'</div>';
+  if(cue.foot) body+='<div class="pill">'+(cue.foot==="left"?"L":"R")+' FOOT</div>';
+  document.getElementById("stageIn").innerHTML=body;
+  st.classList.add("flash"); setTimeout(function(){st.classList.remove("flash");},180);
+}
+
+/* ---------- setup diagrams ---------- */
+function dot(x,y,color,r){
+  var hex=(DATA.palette[color]||{}).hex||"#888780";
+  return '<circle cx="'+x+'" cy="'+y+'" r="'+(r||9)+'" fill="'+hex+'"/>';
+}
+function player(x,y){
+  return '<circle cx="'+x+'" cy="'+y+'" r="8" fill="#98a2ad"/>'+
+         '<circle cx="'+x+'" cy="'+(y+15)+'" r="5" fill="none" stroke="#98a2ad" stroke-width="1.6"/>';
+}
+function board(x,y,w,angled){
+  return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="9" rx="2" fill="#98a2ad"/>'+
+    (angled?'<path d="M'+x+' '+(y+9)+'L'+(x+14)+' '+(y+20)+'" stroke="#98a2ad" stroke-width="2" fill="none"/>':'');
+}
+function dim(x1,x2,y,text){
+  return '<line x1="'+x1+'" y1="'+y+'" x2="'+x2+'" y2="'+y+'" stroke="#5f6a75" stroke-width="1"/>'+
+    '<line x1="'+x1+'" y1="'+(y-4)+'" x2="'+x1+'" y2="'+(y+4)+'" stroke="#5f6a75" stroke-width="1"/>'+
+    '<line x1="'+x2+'" y1="'+(y-4)+'" x2="'+x2+'" y2="'+(y+4)+'" stroke="#5f6a75" stroke-width="1"/>'+
+    '<text x="'+((x1+x2)/2)+'" y="'+(y-8)+'" text-anchor="middle" fill="#98a2ad" font-size="11" font-family="Archivo,sans-serif">'+text+'</text>';
+}
+function vdim(y1,y2,x,text){
+  return '<line x1="'+x+'" y1="'+y1+'" x2="'+x+'" y2="'+y2+'" stroke="#5f6a75" stroke-width="1"/>'+
+    '<text x="'+(x+7)+'" y="'+((y1+y2)/2+4)+'" fill="#98a2ad" font-size="11" font-family="Archivo,sans-serif">'+text+'</text>';
+}
+function setupSvg(d){
+  var pal=d.cue.palette, span=ft(d,"spanFt"), bd=ft(d,"boardFt"), a=d.setup.boardAngle==="angled";
+  var L=d.setup.layout, s='<svg viewBox="0 0 320 210" role="img"><title>Setup for '+d.name+'</title>';
+
+  if(L==="two-marker"){
+    s+=board(110,26,100,a);
+    s+=dot(128,120,pal[0]||"red")+dot(192,120,pal[1]||pal[0]||"green");
+    s+=player(160,158);
+    s+=vdim(40,112,232,bd+" ft");
+    s+='<text x="128" y="143" text-anchor="middle" fill="#98a2ad" font-size="10" font-family="Archivo,sans-serif">LEFT</text>';
+    s+='<text x="192" y="143" text-anchor="middle" fill="#98a2ad" font-size="10" font-family="Archivo,sans-serif">RIGHT</text>';
+  } else if(L==="grid-four"||L==="grid-six"){
+    s+=board(110,20,100,a);
+    var x1=78,x2=242,y1=76,y2=166;
+    s+='<rect x="'+x1+'" y="'+y1+'" width="'+(x2-x1)+'" height="'+(y2-y1)+'" fill="none" stroke="#4a515a" stroke-width="1" stroke-dasharray="4 4"/>';
+    s+=dot(x1,y1,pal[0])+dot(x2,y1,pal[1])+dot(x1,y2,pal[2])+dot(x2,y2,pal[3]);
+    if(L==="grid-six"){ s+=dot(160,y1,pal[4])+dot(160,y2,pal[5]); }
+    s+=player(160,118);
+    s+=dim(x1,x2,190,span+" ft square");
+    s+=vdim(34,72,262,bd+" ft");
+  } else if(L==="open-four"){
+    var a1=70,a2=250,b1=42,b2=162;
+    s+='<rect x="'+a1+'" y="'+b1+'" width="'+(a2-a1)+'" height="'+(b2-b1)+'" fill="none" stroke="#4a515a" stroke-width="1" stroke-dasharray="4 4"/>';
+    s+=dot(a1,b1,pal[0])+dot(a2,b1,pal[1])+dot(a1,b2,pal[2])+dot(a2,b2,pal[3]);
+    s+=player(160,95);
+    s+=dim(a1,a2,190,span+" ft square");
+  } else if(L==="open-two-behind"){
+    s+=dot(112,52,pal[0])+dot(208,52,pal[1]||pal[0]);
+    s+=player(160,110);
+    s+='<path d="M160 178L160 140" stroke="#98a2ad" stroke-width="1.5" stroke-dasharray="4 4" fill="none"/>';
+    s+='<text x="160" y="196" text-anchor="middle" fill="#98a2ad" font-size="11" font-family="Archivo,sans-serif">server plays the ball in</text>';
+    s+=dim(112,208,34,span+" ft apart");
+  } else {
+    s+=board(46,30,74,a)+board(126,20,74,a)+board(206,30,74,a);
+    s+=player(160,130);
+    s+='<text x="160" y="182" text-anchor="middle" fill="#98a2ad" font-size="11" font-family="Archivo,sans-serif">boards '+bd+' ft out, '+span+' ft apart</text>';
+  }
+  return s+'</svg>';
+}
+
+/* ---------- screens ---------- */
+function show(id){
+  ["s-home","s-drill","s-run","s-result","s-set"].forEach(function(x){
+    document.getElementById(x).classList.toggle("on", x===id);
+  });
+}
+
+function paintLibrary(){
+  var host=document.getElementById("library"); host.innerHTML="";
+  DATA.families.forEach(function(fam){
+    var list=DATA.drills.filter(function(d){ return d.family===fam.id; });
+    if(!list.length) return;
+    var wrap=document.createElement("div"); wrap.className="fam";
+    wrap.innerHTML='<h3>'+fam.label+'</h3><p>'+fam.blurb+'</p>';
+    var cards=document.createElement("div"); cards.className="cards";
+    list.forEach(function(d){
+      var key=cfg.name+"|"+cfg.age+"|"+d.id, pb=bests[key]||0;
+      var b=document.createElement("button");
+      b.className="card"+(d.boardsNeeded?" locked":"");
+      b.innerHTML='<h4>'+d.name+(d.isTest?' <span class="chip">Test</span>':'')+
+        (d.boardsNeeded?' <span class="chip mute">'+d.boardsNeeded+' boards</span>':'')+'</h4>'+
+        '<p>'+d.summary+'</p>'+
+        '<div class="meta"><span>'+d.scoring.durationSec+'s</span><span>'+d.cue.palette.length+' markers</span>'+
+        (pb?'<span>best '+pb+'</span>':'')+'</div>';
+      b.addEventListener("click",function(){ openDrill(d); });
+      cards.appendChild(b);
+    });
+    wrap.appendChild(cards); host.appendChild(wrap);
+  });
+}
+
+var current=null;
+function openDrill(d){
+  current=d;
+  document.getElementById("drillTitle").textContent=d.name;
+  var t=tiersFor(d), key=cfg.name+"|"+cfg.age+"|"+d.id, pb=bests[key]||0;
+  var band=(DATA.ageBands.filter(function(b){return b.id===cfg.age;})[0]||{}).label||"";
+  var html='<div class="diagram">'+setupSvg(d)+'</div>'+
+    '<div class="h1">'+d.name+'</div>'+
+    '<div class="sub">'+d.summary+'</div>'+
+    '<div class="lab">Tiers for '+band+'</div><div class="tiers">'+
+      TIERS.slice(1).map(function(nm,i){ return '<div class="tier"><b>'+t[i]+'</b><span>'+nm+'</span></div>'; }).join("")+
+    '</div>'+
+    (pb?'<div class="note">Best so far: '+pb+' reps.</div>':'')+
+    '<div class="lab">Coaching</div><ul class="coach">'+
+      d.coaching.map(function(c){ return '<li>'+c+'</li>'; }).join("")+'</ul>';
+  if(d.boardsNeeded) html+='<div class="warn">Needs '+d.boardsNeeded+' sensor boards. You can still run it by calling the boards out loud.</div>';
+  document.getElementById("drillBody").innerHTML=html;
+  show("s-drill");
+}
+
+/* ---------- settings ---------- */
+var SEGS=[
+  { id:"segAge", key:"age", opts:DATA.ageBands.map(function(b){return [b.id,b.label];}) },
+  { id:"segInput", key:"input", opts:[["tap","Tap"],["mic","Mic"],["sensor","Sensor"]] },
+  { id:"segVoice", key:"voice", opts:[["on","On"],["off","Off"]] },
+  { id:"segMiss", key:"miss", opts:[["patient","Patient"],["nudge","Nudge"],["move","Move on"]] }
+];
+var NOTES={
+  tap:"Anyone taps the screen when a rep lands. Works everywhere, needs a spare hand.",
+  mic:"The phone listens for the ball hitting the wall. Needs https. Set the ball down, watch the bar, then put the slider just above resting noise.",
+  sensor:"Connects to an ESP32 board over websocket. For hardware mode, load this page from the board itself so the ws:// connection is allowed."
+};
+function paintSettings(){
+  SEGS.forEach(function(sg){
+    var host=document.getElementById(sg.id); host.innerHTML="";
+    sg.opts.forEach(function(o){
+      var b=document.createElement("button");
+      b.textContent=o[1]; if(cfg[sg.key]===o[0]) b.className="on";
+      b.addEventListener("click",function(){
+        cfg[sg.key]=o[0]; put("ww:cfg",cfg); paintSettings(); paintLibrary();
+        if(sg.key==="input"){
+          micStop(); Sensor.stop();
+          if(o[0]==="mic") micStart();
+          if(o[0]==="sensor") Sensor.connect();
+        }
+      });
+      host.appendChild(b);
+    });
+  });
+  document.getElementById("inputNote").textContent=NOTES[cfg.input]||"";
+  document.getElementById("pName").value=cfg.name;
+  document.getElementById("micThresh").value=cfg.thresh;
+}
+
+/* ---------- wiring ---------- */
+document.getElementById("stage").addEventListener("click",function(){ if(Eng.live&&cfg.input==="tap") hit("tap",0); });
+document.getElementById("stage").addEventListener("keydown",function(e){
+  if(e.key===" "||e.key==="Enter"){ e.preventDefault(); if(Eng.live) hit("tap",0); }
+});
+document.addEventListener("keydown",function(e){
+  if(e.target.tagName==="INPUT") return;
+  if(e.key===" "&&Eng.live){ e.preventDefault(); hit("tap",0); }
+});
+document.getElementById("setBtn").addEventListener("click",function(){ paintSettings(); show("s-set"); });
+document.getElementById("whoBtn").addEventListener("click",function(){ paintSettings(); show("s-set"); });
+document.getElementById("setBack").addEventListener("click",function(){ paintLibrary(); show("s-home"); });
+document.getElementById("backBtn").addEventListener("click",function(){ show("s-home"); });
+document.getElementById("goBtn").addEventListener("click",function(){ Eng.start(current); });
+document.getElementById("stopBtn").addEventListener("click",function(){ Eng.halt(); show("s-drill"); });
+document.getElementById("againBtn").addEventListener("click",function(){ Eng.start(current); });
+document.getElementById("doneBtn").addEventListener("click",function(){ paintLibrary(); show("s-home"); });
+document.getElementById("pName").addEventListener("input",function(){
+  cfg.name=this.value.trim()||"Player"; put("ww:cfg",cfg);
+  document.getElementById("whoBtn").textContent=cfg.name;
+});
+document.getElementById("micThresh").addEventListener("input",function(){ cfg.thresh=Number(this.value); put("ww:cfg",cfg); });
+document.getElementById("wipeBtn").addEventListener("click",function(){ bests={}; put("ww:bests",bests); paintLibrary(); });
+
+get("ww:cfg",null,function(saved){
+  if(saved&&typeof saved==="object"){
+    Object.keys(cfg).forEach(function(k){ if(saved[k]!==undefined) cfg[k]=saved[k]; });
+    if(cfg.input==="mic" && !window.isSecureContext) cfg.input="tap";
+  }
+  get("ww:bests",{},function(b){
+    bests=(b&&typeof b==="object")?b:{};
+    document.getElementById("whoBtn").textContent=cfg.name;
+    paintSettings();
+    paintLibrary();
+  });
+});
+})();
+</script>
+</body>
+</html>
