@@ -48,13 +48,16 @@ README.md                  public docs + drill schema
 
 ## Known issues (good first tasks)
 
-- `put()` / `get()` in index.html use `window.storage`, a host-specific shim. **For real
-  deployment, swap to `localStorage`** with the same async-shaped API so nothing else changes.
 - Age scaling is a single multiplier per band (`ageScale`, u6 = 0.4). It's a guess. Expect to
-  replace it with per-drill per-band tables once real session data exists.
+  replace it with per-drill per-band tables now that session history exists to inform it.
 - Mic threshold is a raw peak level with a 320ms refractory window. Naive. A proper onset
   detector (spectral flux) would cut false positives on grass and carpet.
-- No session history — only a single personal best per player/age/drill.
+
+## Storage keys
+
+All localStorage, all device-local: `ww:cfg` (settings), `ww:bests` (one PB per
+player|age|drill), `ww:hist` (finished runs, capped at 400 — reps are the stored truth, tier
+labels are recomputed at display time).
 
 ## Editing drills
 
@@ -72,13 +75,17 @@ Schema is documented in README.md. Notes:
 
 ## Roadmap
 
-1. localStorage swap, then first public deploy (Cloudflare Pages).
-2. Session history + a simple progress view.
-3. `hardware/` — ESP32 firmware: SoftAP, static file server for index.html, WebSocket emitting
+Done: localStorage, public deploy (wallwork.pages.dev, push-to-deploy from main), session
+history + progress view.
+
+1. `hardware/` — ESP32 firmware: SoftAP, static file server for index.html, WebSocket emitting
    `{"type":"hit","board":N}`. Accelerometer mounts to the centre-back of the rebound panel, not
    the frame; the frame damps the impact transient.
-4. Multi-board sessions (2–6), which the event schema already supports.
-5. 3D-printed enclosure.
+2. Multi-board sessions (2–6), which the event schema already supports. Note: the cue engine
+   currently never says *which* board — fix generically alongside the hardware.
+3. 3D-printed enclosure.
+4. Maybe: a watchOS companion for calls-on-the-wrist and tap scoring (Paul has an Apple dev
+   account). It would emit the same `{source, boardId, t}` hit events.
 
 ## Tone
 
