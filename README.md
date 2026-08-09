@@ -33,6 +33,11 @@ systems share it: their sensor sits on the board and cannot tell which marker yo
 The called colour, number, and foot are an unverified constraint layer in every product of this
 kind. The constraint makes the rep hard; the sensor makes it measurable.
 
+The phone is the caller. The screen shows the colour and, with voice on, says it out loud. The
+markers themselves never light up and are never connected to anything — any coloured object
+works: cones, pods, a strip of tape. Light-up training pods serve fine here as plain coloured
+markers, switched off.
+
 ### The iOS problem, and why there is no app
 
 Web Bluetooth does not exist on iOS and is not coming. Routing hardware through BLE would lock
@@ -136,6 +141,10 @@ touching code. Useful contributions:
 - Threshold corrections from real sessions, with the age band and the number of players behind them
 - New drills, especially in the `open` family — no board needed, so anyone can run them
 - Better coaching notes: the failure mode to watch for beats a description of the drill
+
+Two copy rules: the phone calls, nothing lights — write "the called colour", never "the lit
+marker". And name the foot surface exactly — sole means the bottom of the foot; if a drill wants
+the toe or the laces, say so.
 
 Open a PR against `drills.json` and say how many reps produced the numbers.
 
