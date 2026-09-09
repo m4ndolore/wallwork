@@ -94,6 +94,15 @@ already expressible — a six-board session is just events with different `board
 single renderer draws the diagram. New drills get a correct, age-scaled picture for free, and
 there are no photographs to license or keep current.
 
+## Session history
+
+Every finished run is saved on the device: player, age band, drill, reps, and average reaction
+time, capped at the most recent 400 sessions. The Progress screen (the ↗ button) graphs reps
+per drill and lists every session by day, so you can see whether the numbers actually move.
+Stopping a run early saves nothing. Reps are the stored truth — tier labels are recomputed
+against current thresholds, so a threshold correction re-grades old sessions. Clearing it all
+is one button in Setup, and none of it ever leaves the device.
+
 ## Drill schema
 
 ```jsonc

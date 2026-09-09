@@ -96,6 +96,11 @@
   .meter{height:8px;border-radius:99px;background:var(--surface);border:1px solid var(--line);overflow:hidden;margin-top:9px}
   .meter i{display:block;height:100%;width:0;background:#17b24a}
   .note{font-size:12px;color:var(--dim);margin-top:7px;line-height:1.45}
+  .spark{display:block;width:100%;height:auto;margin-top:9px}
+  .sess{display:flex;align-items:baseline;gap:10px;font-size:13px;padding:8px 0;border-bottom:1px solid var(--line)}
+  .sess:last-child{border-bottom:none}
+  .sess b{font-family:'Anton',sans-serif;font-size:17px;font-weight:400}
+  .sess .tiername{color:var(--dim);font-size:11px;letter-spacing:.08em;text-transform:uppercase;min-width:44px;text-align:right}
   .warn{font-size:12px;color:#ff9a95;margin-top:7px}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -108,6 +113,7 @@
       <span class="mark">Wallwork</span>
       <span class="grow"></span>
       <button class="btn" id="whoBtn">Player</button>
+      <button class="btn icon" id="progBtn" aria-label="Progress">↗</button>
       <button class="btn icon" id="setBtn" aria-label="Settings">⚙</button>
     </div>
     <div class="scroll" id="library"></div>
@@ -145,6 +151,14 @@
     </div>
   </section>
 
+  <section class="screen" id="s-prog">
+    <div class="rail">
+      <button class="btn icon" id="progBack" aria-label="Back">←</button>
+      <span class="mark">Progress</span>
+    </div>
+    <div class="scroll" id="progBody"></div>
+  </section>
+
   <section class="screen" id="s-set">
     <div class="rail">
       <button class="btn icon" id="setBack" aria-label="Back">←</button>
@@ -168,7 +182,7 @@
       <div class="seg" id="segMiss"></div>
       <div class="note">Patient waits forever for the rep. Nudge re-calls the same target after four seconds. Move on gives up and calls a new one.</div>
       <div class="lab">Data</div>
-      <button class="btn" id="wipeBtn">Clear all personal bests</button>
+      <button class="btn" id="wipeBtn">Clear personal bests and history</button>
     </div>
   </section>
 </div>
@@ -198,6 +212,7 @@ function get(k,fb,cb){
 
 var cfg = { name:"Player", age:"u8", input:"tap", voice:"on", miss:"patient", thresh:26 };
 var bests = {};
+var hist = [];
 
 /* ---------- hit bus ---------- */
 var Bus = {
@@ -355,6 +370,9 @@ var Eng = {
     var prev=bests[key]||0, isPB=this.hits>prev;
     if(isPB){ bests[key]=this.hits; put("ww:bests",bests); }
     var avg=this.msN?Math.round(this.msSum/this.msN):null;
+    hist.push({ p:cfg.name, a:cfg.age, d:d.id, r:this.hits, ms:avg, t:Date.now() });
+    if(hist.length>400) hist=hist.slice(hist.length-400);
+    put("ww:hist",hist);
     var nextTarget = idx<4 ? t[idx] : null;
     document.getElementById("resTitle").textContent=d.name;
     document.getElementById("resBody").innerHTML =
@@ -461,9 +479,85 @@ function setupSvg(d){
 
 /* ---------- screens ---------- */
 function show(id){
-  ["s-home","s-drill","s-run","s-result","s-set"].forEach(function(x){
+  ["s-home","s-drill","s-run","s-result","s-set","s-prog"].forEach(function(x){
     document.getElementById(x).classList.toggle("on", x===id);
   });
+}
+
+/* ---------- progress ---------- */
+var DAY_NAMES=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+var MON_NAMES=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function fmtDay(t){ var d=new Date(t); return DAY_NAMES[d.getDay()]+" "+d.getDate()+" "+MON_NAMES[d.getMonth()]; }
+function drillById(id){ return DATA.drills.filter(function(d){ return d.id===id; })[0]||null; }
+function myHist(){ return hist.filter(function(s){ return s.p===cfg.name && s.a===cfg.age; }); }
+
+function spark(vals){
+  var w=260,h=40,p=5;
+  var min=Math.min.apply(null,vals), max=Math.max.apply(null,vals);
+  if(max===min){ min-=1; max+=1; }
+  var pts=vals.map(function(v,i){
+    var x=p+i*(w-2*p)/(vals.length-1), y=h-p-(v-min)*(h-2*p)/(max-min);
+    return x.toFixed(1)+","+y.toFixed(1);
+  });
+  var last=pts[pts.length-1].split(",");
+  return '<svg class="spark" viewBox="0 0 '+w+' '+h+'" aria-hidden="true">'+
+    '<polyline points="'+pts.join(" ")+'" fill="none" stroke="#f5c518" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+
+    '<circle cx="'+last[0]+'" cy="'+last[1]+'" r="3.5" fill="#eef1f3"/></svg>';
+}
+
+function paintProgress(){
+  var host=document.getElementById("progBody"); host.innerHTML="";
+  var band=(DATA.ageBands.filter(function(b){return b.id===cfg.age;})[0]||{}).label||"";
+  var note=document.createElement("div"); note.className="note"; note.style.marginTop="0";
+  note.textContent=cfg.name+", "+band+". Finished runs only, saved on this device and nowhere else.";
+  host.appendChild(note);
+  var rows=myHist();
+  if(!rows.length){
+    var empty=document.createElement("div"); empty.className="note";
+    empty.textContent="No sessions yet. Finish a run and it lands here.";
+    host.appendChild(empty); return;
+  }
+
+  var byDrill={};
+  rows.forEach(function(s){ (byDrill[s.d]=byDrill[s.d]||[]).push(s); });
+  var order=Object.keys(byDrill).filter(drillById).sort(function(a,b){
+    return byDrill[b][byDrill[b].length-1].t - byDrill[a][byDrill[a].length-1].t;
+  });
+
+  var lab=document.createElement("div"); lab.className="lab"; lab.textContent="Trends"; host.appendChild(lab);
+  var cards=document.createElement("div"); cards.className="cards";
+  order.forEach(function(id){
+    var d=drillById(id), vals=byDrill[id].map(function(s){ return s.r; });
+    var best=Math.max.apply(null,vals), lastV=vals[vals.length-1];
+    var b=document.createElement("button"); b.className="card";
+    b.innerHTML='<h4>'+d.name+'</h4>'+
+      (vals.length>1 ? spark(vals.slice(-16)) : '<p>One session so far.</p>')+
+      '<div class="meta"><span>'+vals.length+' session'+(vals.length>1?'s':'')+'</span>'+
+      '<span>best '+best+'</span><span>last '+lastV+'</span></div>';
+    b.addEventListener("click",function(){ openDrill(d); });
+    cards.appendChild(b);
+  });
+  host.appendChild(cards);
+
+  var lab2=document.createElement("div"); lab2.className="lab"; lab2.textContent="Sessions"; host.appendChild(lab2);
+  var shown=rows.slice(-60).reverse(), day="";
+  shown.forEach(function(s){
+    var d=drillById(s.d); if(!d) return;
+    var dayLab=fmtDay(s.t);
+    if(dayLab!==day){
+      day=dayLab;
+      var dl=document.createElement("div"); dl.className="lab"; dl.textContent=dayLab; host.appendChild(dl);
+    }
+    var row=document.createElement("div"); row.className="sess";
+    row.innerHTML='<span>'+d.name+'</span><span class="grow"></span><b>'+s.r+'</b>'+
+      '<span class="tiername">'+TIERS[tierIndex(s.r,tiersFor(d))]+'</span>';
+    host.appendChild(row);
+  });
+  if(rows.length>shown.length){
+    var more=document.createElement("div"); more.className="note";
+    more.textContent="Showing the last "+shown.length+" of "+rows.length+" sessions.";
+    host.appendChild(more);
+  }
 }
 
 function paintLibrary(){
@@ -503,6 +597,10 @@ function openDrill(d){
       TIERS.slice(1).map(function(nm,i){ return '<div class="tier"><b>'+t[i]+'</b><span>'+nm+'</span></div>'; }).join("")+
     '</div>'+
     (pb?'<div class="note">Best so far: '+pb+' reps.</div>':'')+
+    (function(){
+      var r=myHist().filter(function(s){ return s.d===d.id; });
+      return r.length?'<div class="note">Recent: '+r.slice(-3).map(function(s){return s.r;}).join(", ")+' reps.</div>':'';
+    })()+
     '<div class="lab">Coaching</div><ul class="coach">'+
       d.coaching.map(function(c){ return '<li>'+c+'</li>'; }).join("")+'</ul>';
   if(d.boardsNeeded) html+='<div class="warn">Needs '+d.boardsNeeded+' sensor boards. You can still run it by calling the boards out loud.</div>';
@@ -554,6 +652,8 @@ document.addEventListener("keydown",function(e){
   if(e.key===" "&&Eng.live){ e.preventDefault(); hit("tap",0); }
 });
 document.getElementById("setBtn").addEventListener("click",function(){ paintSettings(); show("s-set"); });
+document.getElementById("progBtn").addEventListener("click",function(){ paintProgress(); show("s-prog"); });
+document.getElementById("progBack").addEventListener("click",function(){ paintLibrary(); show("s-home"); });
 document.getElementById("whoBtn").addEventListener("click",function(){ paintSettings(); show("s-set"); });
 document.getElementById("setBack").addEventListener("click",function(){ paintLibrary(); show("s-home"); });
 document.getElementById("backBtn").addEventListener("click",function(){ show("s-home"); });
@@ -566,7 +666,9 @@ document.getElementById("pName").addEventListener("input",function(){
   document.getElementById("whoBtn").textContent=cfg.name;
 });
 document.getElementById("micThresh").addEventListener("input",function(){ cfg.thresh=Number(this.value); put("ww:cfg",cfg); });
-document.getElementById("wipeBtn").addEventListener("click",function(){ bests={}; put("ww:bests",bests); paintLibrary(); });
+document.getElementById("wipeBtn").addEventListener("click",function(){
+  bests={}; put("ww:bests",bests); hist=[]; put("ww:hist",hist); paintLibrary();
+});
 
 get("ww:cfg",null,function(saved){
   if(saved&&typeof saved==="object"){
@@ -575,9 +677,12 @@ get("ww:cfg",null,function(saved){
   }
   get("ww:bests",{},function(b){
     bests=(b&&typeof b==="object")?b:{};
-    document.getElementById("whoBtn").textContent=cfg.name;
-    paintSettings();
-    paintLibrary();
+    get("ww:hist",[],function(h){
+      hist=Array.isArray(h)?h:[];
+      document.getElementById("whoBtn").textContent=cfg.name;
+      paintSettings();
+      paintLibrary();
+    });
   });
 });
 })();
